@@ -24,6 +24,7 @@ from monai.transforms import (
     Lambdad,
     ToTensord,
     ScaleIntensityRangePercentilesd,
+    EnsureChannelFirstd,
 )
 
 
@@ -118,6 +119,10 @@ def _get_mode(
     else:
         fla_presence = os.path.exists(fla_file)
 
+    print(
+        f"t1: {t1_presence} t1c: {t1c_presence} t2: {t2_presence} flair: {fla_presence}"
+    )
+
     if t1_presence and t1c_presence and t2_presence and fla_presence:
         mode = "t1-t1c-t2-fla"
     elif t1_presence and t1c_presence and fla_presence and not t2_presence:
@@ -133,6 +138,7 @@ def _get_mode(
     else:
         raise NotImplementedError("no model implemented for this combination of files")
 
+    print("mode:", mode)
     return mode
 
 
@@ -144,24 +150,44 @@ def _get_dloader(
     fla_file,
     workers,
 ):
-    # T R A N S F O R M S // todo consider single channel
-    inference_transforms = Compose(
-        [
-            LoadImageD(keys=["images"]),
-            Lambdad(["images"], np.nan_to_num),
-            ScaleIntensityRangePercentilesd(
-                keys="images",
-                lower=0.5,
-                upper=99.5,
-                b_min=0,
-                b_max=1,
-                clip=True,
-                relative=False,
-                channel_wise=True,
-            ),
-            ToTensord(keys=["images"]),
-        ]
-    )
+    # T R A N S F O R M S
+    if mode == "t1c-o" or "fla-o":
+        inference_transforms = Compose(
+            [
+                LoadImageD(keys=["images"]),
+                EnsureChannelFirstd(keys="images"),
+                Lambdad(["images"], np.nan_to_num),
+                ScaleIntensityRangePercentilesd(
+                    keys="images",
+                    lower=0.5,
+                    upper=99.5,
+                    b_min=0,
+                    b_max=1,
+                    clip=True,
+                    relative=False,
+                    channel_wise=True,
+                ),
+                ToTensord(keys=["images"]),
+            ]
+        )
+    else:
+        inference_transforms = Compose(
+            [
+                LoadImageD(keys=["images"]),
+                Lambdad(["images"], np.nan_to_num),
+                ScaleIntensityRangePercentilesd(
+                    keys="images",
+                    lower=0.5,
+                    upper=99.5,
+                    b_min=0,
+                    b_max=1,
+                    clip=True,
+                    relative=False,
+                    channel_wise=True,
+                ),
+                ToTensord(keys=["images"]),
+            ]
+        )
     # D A T A L O A D E R
     dicts = list()
 
@@ -243,7 +269,7 @@ def _get_dloader(
 def _get_model_and_weights(mode, model_selection):
     if mode == "t1-t1c-t2-fla":
         model = BasicUNet(
-            dimensions=3,
+            spatial_dims=3,
             in_channels=4,
             out_channels=2,
             features=(32, 32, 64, 128, 256, 32),
@@ -261,7 +287,7 @@ def _get_model_and_weights(mode, model_selection):
 
     elif mode == "t1c-t1-fla":
         model = BasicUNet(
-            dimensions=3,
+            spatial_dims=3,
             in_channels=3,
             out_channels=2,
             features=(32, 32, 64, 128, 256, 32),
@@ -280,7 +306,7 @@ def _get_model_and_weights(mode, model_selection):
 
     elif mode == "t1c-t1":
         model = BasicUNet(
-            dimensions=3,
+            spatial_dims=3,
             in_channels=2,
             out_channels=2,
             features=(32, 32, 64, 128, 256, 32),
@@ -299,7 +325,7 @@ def _get_model_and_weights(mode, model_selection):
 
     elif mode == "t1c-fla":
         model = BasicUNet(
-            dimensions=3,
+            spatial_dims=3,
             in_channels=2,
             out_channels=2,
             features=(32, 32, 64, 128, 256, 32),
@@ -318,7 +344,7 @@ def _get_model_and_weights(mode, model_selection):
 
     elif mode == "t1c-o":
         model = BasicUNet(
-            dimensions=3,
+            spatial_dims=3,
             in_channels=1,
             out_channels=2,
             features=(32, 32, 64, 128, 256, 32),
@@ -337,7 +363,7 @@ def _get_model_and_weights(mode, model_selection):
 
     elif mode == "fla-o":
         model = BasicUNet(
-            dimensions=3,
+            spatial_dims=3,
             in_channels=1,
             out_channels=2,
             features=(32, 32, 64, 128, 256, 32),
@@ -361,11 +387,11 @@ def _get_model_and_weights(mode, model_selection):
 
 # GO
 def single_inference(
-    t1_file,
-    t1c_file,
-    t2_file,
-    fla_file,
     segmentation_file,
+    t1_file=None,
+    t1c_file=None,
+    t2_file=None,
+    fla_file=None,
     whole_network_outputs_file=None,
     metastasis_network_outputs_file=None,
     cuda_devices="0",
@@ -430,6 +456,10 @@ def single_inference(
 
     data_loader = _get_dloader(
         mode=mode,
+        t1_file=t1_file,
+        t1c_file=t1c_file,
+        t2_file=t2_file,
+        fla_file=fla_file,
         workers=workers,
     )
 
@@ -514,7 +544,10 @@ def single_inference(
             # generate segmentation nifti
             onehot_model_output = outputs
 
-            reference_file = data["t1"][0]
+            try:
+                reference_file = data["t1c"][0]
+            except:
+                reference_file = data["fla"][0]
 
             _create_nifti_seg(
                 threshold=threshold,

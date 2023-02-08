@@ -15,6 +15,6 @@ single_inference(
     threshold=0.5,  # optional: where to threshold the network outputs
     sliding_window_overlap=0.5,  # optional: overlap for the sliding window
     crop_size=(192, 192, 32),  # optional: only change if you know what you are doing
-    model_weights="model_weights/last_weights.tar",  # optional: only change if you know what you are doing
+    model_selection="best",  # optional: only change if you know what you are doing
     verbosity=True,  # optional: verbosity of the output
 )
