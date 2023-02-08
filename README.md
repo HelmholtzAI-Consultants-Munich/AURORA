@@ -1,12 +1,12 @@
 # AURORA
 Deep learning models for the manuscript
-[Development and external validation of an MRI-based neural network for brain metastasis segmentation in the AURORA multicenter study](https://www.sciencedirect.com/science/article/pii/S0167814022045625)
+[TODO](https://todo.org)
 
 ## Installation
 
 1) Clone this repository:
     ```bash
-    git clone https://github.com/neuronflow/AURORA
+    git clone https://github.com/HelmholtzAI-Consultants-Munich/AURORA
     ```
 2) Go into the repository and install:
     ```
@@ -37,7 +37,13 @@ Add path to your desired output folder.
 
 
 ## Citation
-when using the software please cite https://www.sciencedirect.com/science/article/pii/S0167814022045625
+when using the software please cite TODO
+
+```
+TODO
+```
+
+also consider citing [Development and external validation of an MRI-based neural network for brain metastasis segmentation in the AURORA multicenter study](https://www.sciencedirect.com/science/article/pii/S0167814022045625)
 
 ```
 @article{buchner2022development,
@@ -48,6 +54,10 @@ when using the software please cite https://www.sciencedirect.com/science/articl
   publisher={Elsevier}
 }
 ```
+
+## 4 Sequences
+If you have all four MR sequences (T1, T1c, T2, FLAIR) consider using:
+https://github.com/neuronflow/AURORA
 
 ## Licensing
 
