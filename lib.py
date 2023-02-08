@@ -27,6 +27,17 @@ from monai.transforms import (
 )
 
 
+def _turbo_path(the_path):
+    turbo_path = Path(
+        os.path.normpath(
+            os.path.abspath(
+                the_path,
+            )
+        )
+    )
+    return turbo_path
+
+
 def _create_nifti_seg(
     threshold,
     reference_file,
@@ -77,54 +88,55 @@ def _create_nifti_seg(
         nib.save(enhancing_out_image, enhancing_network_output_file)
 
 
-# GO
-def single_inference(
+def _get_mode(
     t1_file,
     t1c_file,
     t2_file,
     fla_file,
-    segmentation_file,
-    whole_network_outputs_file=None,
-    metastasis_network_outputs_file=None,
-    cuda_devices="0",
-    tta=True,
-    sliding_window_batch_size=20,
-    workers=0,
-    threshold=0.5,
-    sliding_window_overlap=0.5,
-    crop_size=(192, 192, 32),
-    model_weights="model_weights/last_weights.tar",
-    verbosity=True,
 ):
-    """
-    call this function to run the sliding window inference.
+    # t1
+    if t1_file == None:
+        t1_presence = False
+    else:
+        t1_presence = os.path.exists(t1c_file)
 
-    Parameters:
-    niftis: list of nifti files to infer
-    comment: string to comment
-    model_weights: Path to the model weights
-    tta: whether to run test time augmentations
-    threshold: threshold for binarization of the network outputs. Greater than <theshold> equals foreground
-    cuda_devices: which cuda devices should be used for the inference.
-    crop_size: crop size for the inference
-    workers: how many workers should the data loader use
-    sw_batch_size: batch size for the sliding window inference
-    overlap: overlap used in the sliding window inference
+    # t1c
+    if t1c_file == None:
+        t1c_presence = False
+    else:
+        t1c_presence = os.path.exists(t1c_file)
 
-    see the above function definition for meaningful defaults.
-    """
-    # ~~<< S E T T I N G S >>~~
-    # torch.multiprocessing.set_sharing_strategy("file_system")
+    # t2
+    if t2_file == None:
+        t2_presence = False
+    else:
+        t2_presence = os.path.exists(t2_file)
 
-    # device
-    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-    os.environ["CUDA_VISIBLE_DEVICES"] = cuda_devices
-    multi_gpu = True
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # fla
+    if fla_file == None:
+        fla_presence = False
+    else:
+        fla_presence = os.path.exists(fla_file)
 
-    # clean memory
-    torch.cuda.empty_cache()
+    if t1_presence and t1c_presence and t2_presence and fla_presence:
+        mode = "t1-t1c-t2-fla"
+    elif t1_presence and t1c_presence and fla_presence and not t2_presence:
+        mode = "t1c-t1-fla"
+    elif t1_presence and t1c_presence and not fla_presence and not t2_presence:
+        mode = "t1c-t1"
+    elif not t1_presence and t1c_presence and fla_presence and not t2_presence:
+        mode = "t1c-fla"
+    elif not t1_presence and t1c_presence and not fla_presence and not t2_presence:
+        mode = "t1c-o"
+    elif not t1_presence and not t1c_presence and fla_presence and not t2_presence:
+        mode = "fla-o"
+    else:
+        raise NotImplementedError("no model implemented for this combination of files")
 
+    return mode
+
+
+def _get_dloader(mode, workers):
     # T R A N S F O R M S
     inference_transforms = Compose(
         [
@@ -168,6 +180,83 @@ def single_inference(
         num_workers=workers,
         collate_fn=list_data_collate,
         shuffle=False,
+    )
+
+    return data_loader
+
+
+# GO
+def single_inference(
+    t1_file,
+    t1c_file,
+    t2_file,
+    fla_file,
+    segmentation_file,
+    whole_network_outputs_file=None,
+    metastasis_network_outputs_file=None,
+    cuda_devices="0",
+    tta=True,
+    sliding_window_batch_size=20,
+    workers=0,
+    threshold=0.5,
+    sliding_window_overlap=0.5,
+    crop_size=(192, 192, 32),
+    model_weights="model_weights/last_weights.tar",
+    verbosity=True,
+):
+    """
+    call this function to run the sliding window inference.
+
+    Parameters:
+    niftis: list of nifti files to infer
+    comment: string to comment
+    model_weights: Path to the model weights
+    tta: whether to run test time augmentations
+    threshold: threshold for binarization of the network outputs. Greater than <theshold> equals foreground
+    cuda_devices: which cuda devices should be used for the inference.
+    crop_size: crop size for the inference
+    workers: how many workers should the data loader use
+    sw_batch_size: batch size for the sliding window inference
+    overlap: overlap used in the sliding window inference
+
+    see the above function definition for meaningful defaults.
+    """
+    # ~~<< I N P U T S >>~~
+    if t1_file is not None:
+        t1_file = _turbo_path(t1_file)
+
+    if t1c_file is not None:
+        t1c_file = _turbo_path(t1c_file)
+
+    if t2_file is not None:
+        t2_file = _turbo_path(t2_file)
+
+    if fla_file is not None:
+        fla_file = _turbo_path(fla_file)
+
+    # ~~<< M O D E >>~~
+    mode = _get_mode(
+        t1_file=t1_file,
+        t1c_file=t1c_file,
+        t2_file=t2_file,
+        fla_file=fla_file,
+    )
+
+    # ~~<< S E T T I N G S >>~~
+    # torch.multiprocessing.set_sharing_strategy("file_system")
+
+    # device
+    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+    os.environ["CUDA_VISIBLE_DEVICES"] = cuda_devices
+    multi_gpu = True
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # clean memory
+    torch.cuda.empty_cache()
+
+    data_loader = _get_dloader(
+        mode=mode,
+        workers=workers,
     )
 
     # ~~<< M O D E L >>~~
