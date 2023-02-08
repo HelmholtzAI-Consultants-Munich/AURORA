@@ -136,8 +136,15 @@ def _get_mode(
     return mode
 
 
-def _get_dloader(mode, workers):
-    # T R A N S F O R M S
+def _get_dloader(
+    mode,
+    t1_file,
+    t1c_file,
+    t2_file,
+    fla_file,
+    workers,
+):
+    # T R A N S F O R M S // todo consider single channel
     inference_transforms = Compose(
         [
             LoadImageD(keys=["images"]),
@@ -158,15 +165,63 @@ def _get_dloader(mode, workers):
     # D A T A L O A D E R
     dicts = list()
 
-    images = [t1_file, t1c_file, t2_file, fla_file]
+    if mode == "t1-t1c-t2-fla":
+        images = [t1_file, t1c_file, t2_file, fla_file]
 
-    the_dict = {
-        "t1": t1_file,
-        "t1c": t1c_file,
-        "t2": t2_file,
-        "fla": fla_file,
-        "images": images,
-    }
+        the_dict = {
+            "t1": t1_file,
+            "t1c": t1c_file,
+            "t2": t2_file,
+            "fla": fla_file,
+            "images": images,
+        }
+
+    elif mode == "t1c-t1-fla":
+        images = [t1_file, t1c_file, fla_file]
+
+        the_dict = {
+            "t1": t1_file,
+            "t1c": t1c_file,
+            "fla": fla_file,
+            "images": images,
+        }
+
+    elif mode == "t1c-t1":
+        images = [t1_file, t1c_file]
+
+        the_dict = {
+            "t1": t1_file,
+            "t1c": t1c_file,
+            "images": images,
+        }
+
+    elif mode == "t1c-fla":
+        images = [t1c_file, fla_file]
+
+        the_dict = {
+            "t1c": t1c_file,
+            "fla": fla_file,
+            "images": images,
+        }
+
+    elif mode == "t1c-o":
+        images = [t1c_file]
+
+        the_dict = {
+            "t1c": t1c_file,
+            "images": images,
+        }
+
+    elif mode == "fla-o":
+        images = [fla_file]
+
+        the_dict = {
+            "fla": fla_file,
+            "images": images,
+        }
+
+    else:
+        raise NotImplementedError("no model implemented for this combination of files")
 
     dicts.append(the_dict)
 
@@ -185,6 +240,125 @@ def _get_dloader(mode, workers):
     return data_loader
 
 
+def _get_model_and_weights(mode, model_selection):
+    if mode == "t1-t1c-t2-fla":
+        model = BasicUNet(
+            dimensions=3,
+            in_channels=4,
+            out_channels=2,
+            features=(32, 32, 64, 128, 256, 32),
+            dropout=0.1,
+            act="mish",
+        )
+        if model_selection == "best":
+            weights = _turbo_path("model_weights/t1-t1c-t1-fla/t1-t1c-t1-fla_best.tar")
+        elif model_selection == "last":
+            weights = _turbo_path("model_weights/t1-t1c-t1-fla/t1-t1c-t1-fla_last.tar")
+        else:
+            raise NotImplementedError(
+                "no checkpoint implemented for this selectrion strategy."
+            )
+
+    elif mode == "t1c-t1-fla":
+        model = BasicUNet(
+            dimensions=3,
+            in_channels=3,
+            out_channels=2,
+            features=(32, 32, 64, 128, 256, 32),
+            dropout=0.1,
+            act="mish",
+        )
+
+        if model_selection == "best":
+            weights = _turbo_path("model_weights/t1c-t1-fla/t1c-t1-fla_best.tar")
+        elif model_selection == "last":
+            weights = _turbo_path("model_weights/t1c-t1-fla/t1c-t1-fla_last.tar")
+        else:
+            raise NotImplementedError(
+                "no checkpoint implemented for this selectrion strategy."
+            )
+
+    elif mode == "t1c-t1":
+        model = BasicUNet(
+            dimensions=3,
+            in_channels=2,
+            out_channels=2,
+            features=(32, 32, 64, 128, 256, 32),
+            dropout=0.1,
+            act="mish",
+        )
+
+        if model_selection == "best":
+            weights = _turbo_path("model_weights/t1c-t1/t1c-t1_best.tar")
+        elif model_selection == "last":
+            weights = _turbo_path("model_weights/t1c-t1/t1c-t1_last.tar")
+        else:
+            raise NotImplementedError(
+                "no checkpoint implemented for this selectrion strategy."
+            )
+
+    elif mode == "t1c-fla":
+        model = BasicUNet(
+            dimensions=3,
+            in_channels=2,
+            out_channels=2,
+            features=(32, 32, 64, 128, 256, 32),
+            dropout=0.1,
+            act="mish",
+        )
+
+        if model_selection == "best":
+            weights = _turbo_path("model_weights/t1c-fla/t1c-fla_best.tar")
+        elif model_selection == "last":
+            weights = _turbo_path("model_weights/t1c-fla/t1c-fla_last.tar")
+        else:
+            raise NotImplementedError(
+                "no checkpoint implemented for this selectrion strategy."
+            )
+
+    elif mode == "t1c-o":
+        model = BasicUNet(
+            dimensions=3,
+            in_channels=1,
+            out_channels=2,
+            features=(32, 32, 64, 128, 256, 32),
+            dropout=0.1,
+            act="mish",
+        )
+
+        if model_selection == "best":
+            weights = _turbo_path("model_weights/t1c-o/t1c-o_best.tar")
+        elif model_selection == "last":
+            weights = _turbo_path("model_weights/t1c-fla/t1c-fla_last.tar")
+        else:
+            raise NotImplementedError(
+                "no checkpoint implemented for this selectrion strategy."
+            )
+
+    elif mode == "fla-o":
+        model = BasicUNet(
+            dimensions=3,
+            in_channels=1,
+            out_channels=2,
+            features=(32, 32, 64, 128, 256, 32),
+            dropout=0.1,
+            act="mish",
+        )
+
+        if model_selection == "best":
+            weights = _turbo_path("model_weights/fla-o/fla-o_best.tar")
+        elif model_selection == "last":
+            weights = _turbo_path("model_weights/fla-o/fla-o_last.tar")
+        else:
+            raise NotImplementedError(
+                "no checkpoint implemented for this selectrion strategy."
+            )
+    else:
+        raise NotImplementedError("no model implemented for this combination of files")
+
+    return model, weights
+
+
 # GO
 def single_inference(
     t1_file,
@@ -201,7 +375,7 @@ def single_inference(
     threshold=0.5,
     sliding_window_overlap=0.5,
     crop_size=(192, 192, 32),
-    model_weights="model_weights/last_weights.tar",
+    model_selection="best",
     verbosity=True,
 ):
     """
@@ -260,16 +434,10 @@ def single_inference(
     )
 
     # ~~<< M O D E L >>~~
-    model = BasicUNet(
-        dimensions=3,
-        in_channels=4,
-        out_channels=2,
-        features=(32, 32, 64, 128, 256, 32),
-        dropout=0.1,
-        act="mish",
+    model, model_weights = _get_model_and_weights(
+        mode=mode,
+        model_selection=model_selection,
     )
-
-    model_weights = Path(os.path.abspath(model_weights))
     checkpoint = torch.load(model_weights, map_location="cpu")
 
     # inferer
