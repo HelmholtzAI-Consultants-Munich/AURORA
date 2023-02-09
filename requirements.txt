@@ -1,8 +1,8 @@
 torch==1.13.1
-torchvision-0.14.1
+torchvision==0.14.1
 -f https://download.pytorch.org/whl/torch_stable.html
 monai==1.1.0
 nibabel==4.0.2
-numpy==1.22.3
+numpy==1.23.0
 path==16.2.0
 tqdm==4.64.1
