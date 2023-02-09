@@ -99,7 +99,7 @@ def _get_mode(
     if t1_file == None:
         t1_presence = False
     else:
-        t1_presence = os.path.exists(t1c_file)
+        t1_presence = os.path.exists(t1_file)
 
     # t1c
     if t1c_file == None:
@@ -282,7 +282,7 @@ def _get_model_and_weights(mode, model_selection):
             weights = _turbo_path("model_weights/t1-t1c-t1-fla/t1-t1c-t1-fla_last.tar")
         else:
             raise NotImplementedError(
-                "no checkpoint implemented for this selectrion strategy."
+                "no checkpoint implemented for this selection strategy."
             )
 
     elif mode == "t1c-t1-fla":
@@ -301,7 +301,7 @@ def _get_model_and_weights(mode, model_selection):
             weights = _turbo_path("model_weights/t1c-t1-fla/t1c-t1-fla_last.tar")
         else:
             raise NotImplementedError(
-                "no checkpoint implemented for this selectrion strategy."
+                "no checkpoint implemented for this selection strategy."
             )
 
     elif mode == "t1c-t1":
@@ -320,7 +320,7 @@ def _get_model_and_weights(mode, model_selection):
             weights = _turbo_path("model_weights/t1c-t1/t1c-t1_last.tar")
         else:
             raise NotImplementedError(
-                "no checkpoint implemented for this selectrion strategy."
+                "no checkpoint implemented for this selection strategy."
             )
 
     elif mode == "t1c-fla":
@@ -339,7 +339,7 @@ def _get_model_and_weights(mode, model_selection):
             weights = _turbo_path("model_weights/t1c-fla/t1c-fla_last.tar")
         else:
             raise NotImplementedError(
-                "no checkpoint implemented for this selectrion strategy."
+                "no checkpoint implemented for this selection strategy."
             )
 
     elif mode == "t1c-o":
@@ -358,7 +358,7 @@ def _get_model_and_weights(mode, model_selection):
             weights = _turbo_path("model_weights/t1c-fla/t1c-fla_last.tar")
         else:
             raise NotImplementedError(
-                "no checkpoint implemented for this selectrion strategy."
+                "no checkpoint implemented for this selection strategy."
             )
 
     elif mode == "fla-o":
@@ -377,7 +377,7 @@ def _get_model_and_weights(mode, model_selection):
             weights = _turbo_path("model_weights/fla-o/fla-o_last.tar")
         else:
             raise NotImplementedError(
-                "no checkpoint implemented for this selectrion strategy."
+                "no checkpoint implemented for this selection strategy."
             )
     else:
         raise NotImplementedError("no model implemented for this combination of files")
