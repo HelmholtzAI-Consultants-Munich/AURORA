@@ -135,6 +135,8 @@ def _get_mode(
         mode = "t1c-o"
     elif not t1_presence and not t1c_presence and fla_presence and not t2_presence:
         mode = "fla-o"
+    elif t1_presence and not t1c_presence and not t2_presence and not fla_presence:
+        mode = "t1-o"
     else:
         raise NotImplementedError("no model implemented for this combination of files")
 
@@ -151,7 +153,7 @@ def _get_dloader(
     workers,
 ):
     # T R A N S F O R M S
-    if mode == "t1c-o" or "fla-o":
+    if mode == "t1c-o" or "fla-o" or "t1-o":
         inference_transforms = Compose(
             [
                 LoadImageD(keys=["images"]),
@@ -246,6 +248,13 @@ def _get_dloader(
             "images": images,
         }
 
+    elif mode == "t1-o":
+        images = [t1_file]
+
+        the_dict = {
+            "t1": t1_file,
+            "images": images,
+        }
     else:
         raise NotImplementedError("no model implemented for this combination of files")
 
@@ -355,7 +364,26 @@ def _get_model_and_weights(mode, model_selection):
         if model_selection == "best":
             weights = _turbo_path("model_weights/t1c-o/t1c-o_best.tar")
         elif model_selection == "last":
-            weights = _turbo_path("model_weights/t1c-fla/t1c-fla_last.tar")
+            weights = _turbo_path("model_weights/t1c-o/t1c-o_last.tar")
+        else:
+            raise NotImplementedError(
+                "no checkpoint implemented for this selection strategy."
+            )
+
+    elif mode == "t1-o":
+        model = BasicUNet(
+            spatial_dims=3,
+            in_channels=1,
+            out_channels=2,
+            features=(32, 32, 64, 128, 256, 32),
+            dropout=0.1,
+            act="mish",
+        )
+
+        if model_selection == "best":
+            weights = _turbo_path("model_weights/t1-o/t1c-o_best.tar")
+        elif model_selection == "last":
+            weights = _turbo_path("model_weights/t1-o/t1c-o_last.tar")
         else:
             raise NotImplementedError(
                 "no checkpoint implemented for this selection strategy."
@@ -547,7 +575,12 @@ def single_inference(
             try:
                 reference_file = data["t1c"][0]
             except:
-                reference_file = data["fla"][0]
+                try:
+                    reference_file = data["fla"][0]
+                except:
+                    reference_file = data["t1"][0]
+                else:
+                    FileNotFoundError("no reference file found!")
 
             _create_nifti_seg(
                 threshold=threshold,
