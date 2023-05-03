@@ -1,5 +1,6 @@
 # AURORA
-Deep learning models for the manuscript
+Deep learning models for the manuscript:
+
 [Identifying core MRI sequences for reliable automatic brain metastasis segmentation](https://www.medrxiv.org/content/10.1101/2023.05.02.23289342v1)
 
 ## Installation
