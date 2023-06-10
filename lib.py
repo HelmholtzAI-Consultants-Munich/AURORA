@@ -424,7 +424,7 @@ def single_inference(
     metastasis_network_outputs_file=None,
     cuda_devices="0",
     tta=True,
-    sliding_window_batch_size=20,
+    sliding_window_batch_size=1, # faster for single interference (on RTX 3090)
     workers=0,
     threshold=0.5,
     sliding_window_overlap=0.5,
