@@ -60,7 +60,7 @@ def _create_nifti_seg(
     whole_metastasis = binarized_outputs[0]
     enhancing_metastasis = binarized_outputs[1]
 
-    final_seg = whole_metastasis
+    final_seg = whole_metastasis.copy()
     final_seg[whole_metastasis == 1] = 1  # edema
     final_seg[enhancing_metastasis == 1] = 2  # enhancing
 
@@ -73,7 +73,7 @@ def _create_nifti_seg(
     if whole_network_output_file:
         whole_network_output_file = Path(os.path.abspath(whole_network_output_file))
 
-        whole_out = activated_outputs[0]
+        whole_out = binarized_outputs[0]
 
         whole_out_image = nib.Nifti1Image(whole_out, REF.affine, REF.header)
         nib.save(whole_out_image, whole_network_output_file)
@@ -83,7 +83,7 @@ def _create_nifti_seg(
             os.path.abspath(enhancing_network_output_file)
         )
 
-        enhancing_out = activated_outputs[1]
+        enhancing_out = binarized_outputs[1]
 
         enhancing_out_image = nib.Nifti1Image(enhancing_out, REF.affine, REF.header)
         nib.save(enhancing_out_image, enhancing_network_output_file)
