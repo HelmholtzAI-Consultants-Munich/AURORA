@@ -9,14 +9,14 @@ Deep learning models for the manuscript
     ```bash
     git clone https://github.com/HelmholtzAI-Consultants-Munich/AURORA
     ```
-2) Go into the repository and install:
+2) Go into the repository and install the requirements:
     ```
     cd AURORA
     pip install -r requirements.txt 
     ```
     
 ## Recommended Environment
-* CUDA 11.4+
+* CUDA 11.4+ (https://developer.nvidia.com/cuda-toolkit)
 * Python 3.10+
 * GPU with at least 8GB of VRAM
 
@@ -24,11 +24,13 @@ further details in requirements.txt
 
 ## Usuage
 
+**Tutorial.ipynb**: Step-by-step example of project setup and segmentation of supplied example data ([BraTS-METS](https://doi.org/10.48550/arXiv.2306.00838))
+
 **run_inference.py**: Example script for single inference. 
 
 ***Input: t1_file, t1c_file, t2_file, fla_file***
 
-All 4 input files must be nifti (nii.gz) files containing 3D MRIs. Please ensure that all input images are correctly preprocessed (skullstripped, co-registered, registered on SRI-24, you can use [BraTS Toolkit](https://github.com/neuronflow/BraTS-Toolkit) for that).
+All 4 input files must be nifti (nii.gz) files containing 3D MRIs. Please ensure that all input images are correctly preprocessed (skullstripped, co-registered, registered on SRI-24). You can use [BraTS Toolkit](https://github.com/neuronflow/BraTS-Toolkit) for preprocessing (please follow the instructions [here](https://github.com/neuronflow/BraTS-Toolkit)).
 
 ***Output: segmentation_file***
 
