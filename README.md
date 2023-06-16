@@ -26,7 +26,13 @@ further details in requirements.txt
 
 **Tutorial.ipynb**: Step-by-step example of project setup and segmentation of supplied example data ([BraTS-METS](https://doi.org/10.48550/arXiv.2306.00838))
 
-**run_inference.py**: Example script for single inference. 
+**run_inference_cli.py**: Simple command-line implementation: 
+
+This command will list all available options:
+
+    python3 /run_inference_cli.py --help
+    
+**run_inference.py**: Example script for single inference. More customization possible.
 
 ***Input: t1_file, t1c_file, t2_file, fla_file***
 
